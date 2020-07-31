@@ -29,4 +29,21 @@ describe('HTTP Promise', () => {
     expect(res.error).toBeNull();
     expect(res.response).toBeTruthy();
   });
+
+  it('it should get status code and headers', async () => {
+    const res = await http_promise.request(
+      'https://reqres.in:443/api/users/',
+      'post',
+      { 'Content-Type': 'application/json' },
+      JSON.stringify({
+        name: 'John Doe',
+        job: 'DevOps Specialist',
+      })
+    );
+
+    expect(res.error).toBeNull();
+    expect(res.response).toBeTruthy();
+    expect(res.response.headers).toBeTruthy();
+    expect(res.response.status).toBeGreaterThanOrEqual(200);
+  });
 });

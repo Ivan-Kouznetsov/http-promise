@@ -16,12 +16,24 @@ const splitUrl = (url: string) => {
   return { protocol, hostname: /(\w|\.)+(?=:{0,1})/.exec(rawHostname)[0], path, port };
 };
 
+const headerArrayToHashTable = (rawHeaders: string[]): { [key: string]: string } => {
+  const result: { [key: string]: string } = {};
+  for (let i = 0; i < rawHeaders.length; i = i + 2) {
+    result[rawHeaders[i]] = rawHeaders[i + 1];
+  }
+
+  return result;
+};
+
 export const request = (
   url: string,
   method: string,
   headers: { [key: string]: string },
   body: string
-): Promise<{ error: string; response: object }> => {
+): Promise<{
+  error: string;
+  response: { json: Record<string, unknown>; headers: { [key: string]: string }; status?: number };
+}> => {
   const urlParts = splitUrl(url);
 
   return new Promise((resolve, _) => {
@@ -48,7 +60,14 @@ export const request = (
         });
 
         res.on('end', () => {
-          resolve({ response: JSON.parse(data), error: null });
+          resolve({
+            response: {
+              json: JSON.parse(data),
+              headers: headerArrayToHashTable(res.rawHeaders),
+              status: res.statusCode,
+            },
+            error: null,
+          });
         });
       })
       .on('error', (err) => {
