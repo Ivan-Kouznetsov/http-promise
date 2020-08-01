@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as https from 'https';
+import { TextEncoder } from 'util';
 
 /**
  * Helpers
@@ -25,14 +26,23 @@ const headerArrayToHashTable = (rawHeaders: string[]): { [key: string]: string }
   return result;
 };
 
+const tryParseJson = (str: string): Record<string, unknown> => {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return null;
+  }
+};
+
 export const request = (
   url: string,
   method: string,
   headers: { [key: string]: string },
-  body: string
+  body: string,
+  timeout?: number
 ): Promise<{
   error: string;
-  response: { json: Record<string, unknown>; headers: { [key: string]: string }; status?: number };
+  response: { json: Record<string, unknown>; string: string; headers: { [key: string]: string }; status?: number };
 }> => {
   const urlParts = splitUrl(url);
 
@@ -41,7 +51,22 @@ export const request = (
       resolve({ error: 'Only http and https supported', response: null });
       return;
     }
+    if (timeout) {
+      setTimeout(() => {
+        resolve({ error: 'Timed out', response: null });
+      }, timeout);
+    }
 
+    if (body !== null) {
+      headers['Content-Length'] = new TextEncoder().encode(body).length.toString();
+      if (headers['Content-Type'] === undefined) {
+        if (!/{.+}/.test(body)) {
+          headers['Content-Type'] = 'text/plain';
+        } else {
+          headers['Content-Type'] = 'application/json';
+        }
+      }
+    }
     const options = {
       protocol: urlParts.protocol + ':',
       hostname: urlParts.hostname,
@@ -60,9 +85,11 @@ export const request = (
         });
 
         res.on('end', () => {
+          const json = tryParseJson(data);
           resolve({
             response: {
-              json: JSON.parse(data),
+              json,
+              string: data,
               headers: headerArrayToHashTable(res.rawHeaders),
               status: res.statusCode,
             },

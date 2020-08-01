@@ -46,4 +46,20 @@ describe('HTTP Promise', () => {
     expect(res.response.headers).toBeTruthy();
     expect(res.response.status).toBeGreaterThanOrEqual(200);
   });
+
+  it('it should post text', async () => {
+    const postRes = await http_promise.request('http://localhost:3030/posts/', 'post', {}, 'Hello world');
+
+    expect(postRes.error).toBeNull();
+    expect(postRes.response).toBeTruthy();
+    expect(postRes.response.headers).toBeTruthy();
+    expect(postRes.response.status).toBeGreaterThanOrEqual(200);
+
+    const getRes = await http_promise.request('http://localhost:3030/lastpost', 'get', {}, null);
+
+    expect(getRes.error).toBeNull();
+    expect(getRes.response).toBeTruthy();
+    expect(getRes.response.headers).toBeTruthy();
+    expect(getRes.response.status).toBeGreaterThanOrEqual(200);
+  });
 });

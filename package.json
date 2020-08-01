@@ -4,7 +4,8 @@
   "description": "http and https wrapper",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test-server": "node src/__tests__/__server__/testServer.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@types/jest": "^26.0.7",
     "@types/node": "^14.0.27",
+    "express": "^4.17.1",
     "jest": "^26.1.0",
     "ts-jest": "^26.1.4",
     "typescript": "^3.9.7"
