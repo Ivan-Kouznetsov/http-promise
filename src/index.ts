@@ -44,10 +44,10 @@ const tryParseJson = (str: string): Record<string, unknown> | null => {
 export const request = (
   url: string,
   method: string,
-  useHttp2:boolean=false,
-  headers: { [key: string]: string }= {},  
-  body?: string,  
-  timeout?: number,
+  useHttp2: boolean = false,
+  headers: { [key: string]: string } = {},
+  body?: string,
+  timeout?: number
 ): Promise<{
   json: Record<string, unknown> | null;
   string: string;
@@ -78,60 +78,66 @@ export const request = (
       }
     }
 
-    if (!useHttp2){
-    const options = {
-      protocol: urlParts.protocol + ':',
-      hostname: urlParts.hostname,
-      port: urlParts.port ?? (urlParts.protocol === 'http' ? 80 : 443),
-      path: urlParts.path,
-      method: method,
-      headers: headers,
-      agent: urlParts.protocol === 'http' ? httpkeepAliveAgent : httpskeepAliveAgent,
-    };
+    if (!useHttp2) {
+      const options = {
+        protocol: urlParts.protocol + ':',
+        hostname: urlParts.hostname,
+        port: urlParts.port ?? (urlParts.protocol === 'http' ? 80 : 443),
+        path: urlParts.path,
+        method: method,
+        headers: headers,
+        agent: urlParts.protocol === 'http' ? httpkeepAliveAgent : httpskeepAliveAgent,
+      };
 
-    const req = (urlParts.protocol === 'http' ? http : https)
-      .request(options, (res) => {
-        let data = '';
+      const req = (urlParts.protocol === 'http' ? http : https)
+        .request(options, (res) => {
+          let data = '';
 
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        res.on('end', () => {
-          const json = tryParseJson(data);
-          resolve({
-            json,
-            string: data,
-            headers: headerArrayToHashTable(res.rawHeaders),
-            status: res.statusCode,
+          res.on('data', (chunk) => {
+            data += chunk;
           });
-        });
-      })
-      .on('error', (err) => {
-        reject(err.message);
-      });
 
-    if (body) req.write(body);
-    req.end();
-    }else{
+          res.on('end', () => {
+            const json = tryParseJson(data);
+            resolve({
+              json,
+              string: data,
+              headers: headerArrayToHashTable(res.rawHeaders),
+              status: res.statusCode,
+            });
+          });
+        })
+        .on('error', (err) => {
+          reject(err.message);
+        });
+
+      if (body) req.write(body);
+      req.end();
+    } else {
       const client = http2.connect(url);
-      const responseHeaders: { [key: string]: string }  = {};
+      const responseHeaders: { [key: string]: string } = {};
       client.on('error', (err) => resolve(err));
 
-      const req = client.request({ ':path': `/${urlParts.path}`.replace(/\/\//g,'/')});
+      const req = client.request({ ':path': `/${urlParts.path}`.replace(/\/\//g, '/') });
 
       req.on('response', (headers) => {
         for (const name in headers) {
-          
-          responseHeaders[name]= headers[name].toString();
+          responseHeaders[name] = headers[name].toString();
         }
       });
 
       req.setEncoding('utf8');
       let data = '';
-      req.on('data', (chunk) => { data += chunk; });
+      req.on('data', (chunk) => {
+        data += chunk;
+      });
       req.on('end', () => {
-        resolve({headers:responseHeaders,string:data, json: tryParseJson(data), status: parseInt(responseHeaders[":status"])});
+        resolve({
+          headers: responseHeaders,
+          string: data,
+          json: tryParseJson(data),
+          status: parseInt(responseHeaders[':status']),
+        });
         client.close();
       });
       req.end();
