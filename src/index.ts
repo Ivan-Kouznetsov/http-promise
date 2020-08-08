@@ -67,18 +67,18 @@ export const request = (
       }, timeout);
     }
 
-    if (body !== undefined) {
-      headers['Content-Length'] = new TextEncoder().encode(body).length.toString();
-      if (headers['Content-Type'] === undefined) {
-        if (!/{.+}/.test(body)) {
-          headers['Content-Type'] = 'text/plain';
-        } else {
-          headers['Content-Type'] = 'application/json';
+    if (!useHttp2) {
+      if (body !== undefined) {
+        headers['Content-Length'] = new TextEncoder().encode(body).length.toString();
+        if (headers['Content-Type'] === undefined) {
+          if (!/{.+}/.test(body)) {
+            headers['Content-Type'] = 'text/plain';
+          } else {
+            headers['Content-Type'] = 'application/json';
+          }
         }
       }
-    }
 
-    if (!useHttp2) {
       const options = {
         protocol: urlParts.protocol + ':',
         hostname: urlParts.hostname,
@@ -118,7 +118,12 @@ export const request = (
       const responseHeaders: { [key: string]: string } = {};
       client.on('error', (err) => resolve(err));
 
-      const req = client.request({ ':path': `/${urlParts.path}`.replace(/\/\//g, '/') });
+      const req = client.request({
+        ':method': method.toUpperCase(),
+        ':scheme': urlParts.protocol,
+        ':path': `/${urlParts.path}`.replace(/\/\//g, '/'),
+        ...headers,
+      });
 
       req.on('response', (headers) => {
         for (const name in headers) {
@@ -131,6 +136,7 @@ export const request = (
       req.on('data', (chunk) => {
         data += chunk;
       });
+
       req.on('end', () => {
         resolve({
           headers: responseHeaders,
@@ -140,6 +146,17 @@ export const request = (
         });
         client.close();
       });
+
+      req.on('error', (err) => {
+        reject(err);
+      });
+      req.on('frameError', (err) => {
+        reject(err);
+      });
+      req.on('goaway', (err) => {
+        reject(err);
+      });
+
       req.end();
     }
   });
