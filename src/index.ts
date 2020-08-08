@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as https from 'https';
+import * as http2 from 'http2';
 import { TextEncoder } from 'util';
 const httpkeepAliveAgent = new http.Agent({ keepAlive: true });
 const httpskeepAliveAgent = new https.Agent({ keepAlive: true });
@@ -43,9 +44,10 @@ const tryParseJson = (str: string): Record<string, unknown> | null => {
 export const request = (
   url: string,
   method: string,
-  headers: { [key: string]: string },
-  body?: string,
-  timeout?: number
+  useHttp2:boolean=false,
+  headers: { [key: string]: string }= {},  
+  body?: string,  
+  timeout?: number,
 ): Promise<{
   json: Record<string, unknown> | null;
   string: string;
@@ -75,6 +77,8 @@ export const request = (
         }
       }
     }
+
+    if (!useHttp2){
     const options = {
       protocol: urlParts.protocol + ':',
       hostname: urlParts.hostname,
@@ -109,5 +113,28 @@ export const request = (
 
     if (body) req.write(body);
     req.end();
+    }else{
+      const client = http2.connect(url);
+      const responseHeaders: { [key: string]: string }  = {};
+      client.on('error', (err) => resolve(err));
+
+      const req = client.request({ ':path': `/${urlParts.path}`.replace(/\/\//g,'/')});
+
+      req.on('response', (headers) => {
+        for (const name in headers) {
+          
+          responseHeaders[name]= headers[name].toString();
+        }
+      });
+
+      req.setEncoding('utf8');
+      let data = '';
+      req.on('data', (chunk) => { data += chunk; });
+      req.on('end', () => {
+        resolve({headers:responseHeaders,string:data, json: tryParseJson(data), status: parseInt(responseHeaders[":status"])});
+        client.close();
+      });
+      req.end();
+    }
   });
 };
