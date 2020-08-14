@@ -7,6 +7,12 @@ describe('HTTP Promise', () => {
     expect(res.json).toBeTruthy();
   });
 
+  it('it should fetch with a query', async () => {
+    const res = await http_promise.request('https://reqres.in/api/users/2?aaa=1&bbb=2&ccc=3', 'get', {});
+
+    expect(res.json).toBeTruthy();
+  });
+
   it('it should fetch when port is provided', async () => {
     const res = await http_promise.request('https://reqres.in:443/api/users/2', 'get', {});
 
