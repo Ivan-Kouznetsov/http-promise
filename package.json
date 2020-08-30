@@ -1,6 +1,6 @@
 {
   "name": "http-promise",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "http and https wrapper",
   "main": "index.js",
   "scripts": {
