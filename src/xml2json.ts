@@ -12,12 +12,14 @@ export const xml2json = (xmlStr: string): object => {
  */
 const xml2jsonRecurse = (xmlStr: string) => {
   const obj: { [key: string]: string | object | Array<object> } = {};
+
   let tagName: string, indexClosingTag: number, inner_substring: string, tempVal, openingTag;
 
   while (xmlStr.match(/<[^/][^>]*>/)) {
     openingTag = xmlStr.match(/<[^/][^>]*>/)![0];
     tagName = openingTag.substring(1, openingTag.length - 1);
     tagName = tagName.includes(' ') ? /\S*(?=\s)/.exec(tagName)![0] : tagName;
+
     indexClosingTag = xmlStr.indexOf(openingTag.replace('<', '</'));
 
     inner_substring = xmlStr.substring(openingTag.length, indexClosingTag);
@@ -138,6 +140,7 @@ const replaceAttributes = (xmlStr: string) => {
       const tagName = oldTag.match(/[^<]\S*/)![0];
       let newTag = '<' + tagName + '>';
       const attrs = oldTag.match(/(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|[>"']))+.)["']?/g)!;
+
 
       for (let j = 0; j < attrs.length; j++) {
         const attr = attrs[j];
