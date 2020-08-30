@@ -2,7 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "alwaysStrict": true,
-    "allowJs": true,
+    "allowJs": false,
     "allowUnusedLabels": false,
     "outDir": "dist",
     "noEmit": false,
