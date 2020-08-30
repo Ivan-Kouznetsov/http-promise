@@ -1,10 +1,21 @@
 import * as http_promise from '../';
+import { restPort } from './__server__/testServer';
+
+const localhost = `http://localhost:${restPort}/`;
 
 describe('HTTP Promise', () => {
   it('it should fetch', async () => {
     const res = await http_promise.request('https://reqres.in/api/users/2', 'get', {});
 
     expect(res.json).toBeTruthy();
+  });
+
+  it('it should fetch xml', async () => {
+    const res = await http_promise.request(`${localhost}xml`, 'get', {});
+
+    expect(JSON.stringify(res.json)).toEqual(
+      '{"plane":{"year":"1977","make":"Cessna","model":"Skyhawk","color":"Light blue and white"}}'
+    );
   });
 
   it('it should fetch with a query', async () => {
@@ -50,13 +61,13 @@ describe('HTTP Promise', () => {
   });
 
   it('it should post text', async () => {
-    const postRes = await http_promise.request('http://localhost:3030/posts/', 'post', {}, 'Hello world');
+    const postRes = await http_promise.request(`${localhost}posts/`, 'post', {}, 'Hello world');
 
     expect(postRes.json).toBeTruthy();
     expect(postRes.headers).toBeTruthy();
     expect(postRes.status).toBeGreaterThanOrEqual(200);
 
-    const getRes = await http_promise.request('http://localhost:3030/lastpost', 'get', {});
+    const getRes = await http_promise.request(`${localhost}lastpost`, 'get', {});
 
     expect(getRes.json).toBeTruthy();
     expect(getRes.headers).toBeTruthy();
